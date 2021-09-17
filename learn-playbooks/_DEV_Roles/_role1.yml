@@ -1,0 +1,20 @@
+#!/usr/bin/env ansible-playbook -i hosts.ini
+- hosts: all
+  gather_facts: true
+  tasks:
+  - debug:
+      msg: Check we are running in the directory of the script
+    failed_when: not ansible_env.PWD.endswith('/common')
+  - name: Group by OS
+    group_by: key=os_{{ ansible_distribution }}
+    changed_when: False
+  - debug:
+      msg:
+      - Testx
+      #- Distribution ist: {{ ansible_distribution }}
+      #- Name: {{ ansible_system }}
+      #- Family: {{ ansible_os_family }}
+
+- hosts: os_Debian
+  roles:
+  - common

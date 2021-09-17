@@ -1,0 +1,9 @@
+---
+- name: Write the current date in a file
+  hosts: debian-buster
+  gather_facts: false
+  tasks:
+    - name: "Execute a date command"
+      shell: chmod +x /tmp/script.sh; /tmp/script.sh
+      args:
+        warn: false

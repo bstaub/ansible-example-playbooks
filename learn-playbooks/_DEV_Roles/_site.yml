@@ -1,0 +1,4 @@
+---
+- hosts: testserverdocker
+  roles:
+    - apache

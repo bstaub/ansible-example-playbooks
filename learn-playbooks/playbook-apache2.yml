@@ -1,0 +1,10 @@
+---
+- name: play_1
+  hosts: debian-buster
+  remote_user: root
+
+  tasks:
+  - name: ensure apache is at the latest version
+    apt:
+      name: apache2
+      state: latest

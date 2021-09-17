@@ -1,0 +1,44 @@
+    - name: Install latest of common packages (5)
+      apt:
+        state: latest
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - software-properties-common
+
+    - name: fetch docker apt key
+      shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+
+    - name: Add docker repository
+      shell: add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+
+    - name: Update apt
+      apt: update_cache=yes
+
+    - name: install packets (3)
+      apt:
+        state: latest
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+
+    - name: get uname -s
+      shell: echo "$(uname -s)"
+      register: unameS
+
+    - name: get uname -m
+      shell: echo "$(uname -m)"
+      register: unameM
+
+    - debug:
+        msg: "{{ unameS.stdout }}-{{ unameM.stdout }}"  
+    
+    - name: install docker compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-{{ unameS.stdout }}-{{ unameM.stdout }}"
+        dest: /usr/local/bin/docker-compose
+        mode: 755

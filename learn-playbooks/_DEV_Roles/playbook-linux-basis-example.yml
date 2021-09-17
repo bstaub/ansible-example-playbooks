@@ -1,0 +1,152 @@
+#################################################
+# Initial Server Setup Ubuntu 20.04 System with Docker ready for Postal Email Server
+#################################################
+---
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+    - name: Install Prerequisites
+      apt: name=aptitude update_cache=yes state=latest force_apt_get=yes
+
+# Sudo Group Setup
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+
+# User + Key Setup
+    - name: Create a new regular user with sudo privileges
+      user:
+        name: "{{ create_user }}"
+        state: present
+        groups: wheel
+        append: true
+        create_home: true
+        shell: /bin/bash
+
+
+# Add Postal Group
+    - name: Add postal group
+      ansible.builtin.group:
+        name: postal
+        state: present
+        gid: 997
+
+
+# Create System User for Running Service Postal    
+    - name: Create a new regular user with sudo privileges
+      user:
+        name: "postal"
+        state: present
+        system: true
+        append: true
+        uid: 997
+        group: 997
+        create_home: false
+        shell: /bin/bash
+
+    - name: Set authorized key for remote user
+      authorized_key:
+        user: "{{ create_user }}"
+        state: present
+        key: "{{ copy_local_key }}"
+
+    - name: Disable password authentication for root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin prohibit-password'
+
+# Install Packages
+    - name: Update apt
+      apt: update_cache=yes
+
+    - name: Install required system packages
+      apt: name={{ sys_packages }} state=latest
+
+
+    - name: hostname | Configure hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: hostname | Add hostname hosts to /etc/hosts
+      lineinfile:
+        dest: /etc/hosts
+        regexp: '^127\.0\.0\.1'
+        line: '127.0.0.1 {{ inventory_hostname }}'
+
+#- name: Disable USERGROUPS_ENABLE for Umask 022
+#  lineinfile:
+#    dest: /etc/login.defs
+#    regexp: ^USERGROUPS_ENAB
+#    line: "#USERGROUPS_ENAB yes"
+#    state: present
+#    backrefs: yes
+
+    - name: Update the apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: "{{ apt_cache_expiration }}"
+
+    - name: Install latest of common packages (13)
+      apt:
+        state: latest
+        name:
+          - build-essential
+          - curl
+          - git
+          - htop
+          - jq
+          - logrotate
+          - mailutils
+         #- python-minimal
+          - software-properties-common
+          - ufw
+          - unattended-upgrades
+          - unzip
+          - wget
+          - zip
+
+    #- name: Set server to autoinstall security updates
+    #  template:
+    #    src: etc/apt/apt.conf.d/10periodic
+    #    dest: /etc/apt/apt.conf.d/10periodic
+
+    - name: time | Configure correct Timezeone
+      timezone:
+        name: "{{ server_timezone }}"
+
+   # - name: time | Setup timesync config
+   #   template:
+   #     src: etc/systemd/timesyncd.conf
+   #     dest: /etc/systemd/timesyncd.conf
+   #   notify: enable Timedatectl
+   #   when: ansible_service_mgr == "systemd"
+
+
+# UFW Setup
+    - name: UFW - Allow SSH connections
+      ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: UFW - Deny all other incoming traffic by default
+      ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+# Install Docker & docker-compose
+    - include_tasks: install-docker.yml

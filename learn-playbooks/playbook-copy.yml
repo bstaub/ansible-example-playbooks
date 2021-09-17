@@ -1,0 +1,8 @@
+-
+  name: Kopiere Datei auf die Server
+  hosts: all
+  tasks:
+    - name: Datei kopieren
+      ansible.builtin.copy:
+        src: /home/bstaub/script.sh
+        dest: /tmp/script.sh

@@ -1,0 +1,79 @@
+Lab-Setup
+---------
+
+cat /etc/hosts
+--------------
+172.17.0.5  bstaub-debian-ansible1
+172.17.0.3  debian-test1
+172.17.0.4  debian-test2
+172.17.0.6  debian-test3
+
+cat /root/.ansible.cfg
+----------------------
+[defaults]
+interpreter_python=auto_silent
+command_warnings=False
+inventory = /home/bstaub/hosts.ini
+host_key_checking = False
+
+
+cat /home/bstaub/hosts.ini
+--------------------------
+[control]
+bstaub-debian-ansible1 ansible_connection=local
+
+[testserver]
+debian-test1 ansible_become=true ansible_become_pass=password
+debian-test[2:3]
+
+[testserver:vars]
+ansible_user=ansible
+
+
+exchange ssh keys
+-----------------
+ssh-keygen
+echo docker > password-root.txt
+for user in root;
+  do
+    for os in debian-test1 debian-test2 debian-test3;
+      do
+        sshpass -f password-root.txt ssh-copy-id -i ~/.ssh/id_rsa.pub -o StrictHostKeyChecking=no ${user}@${os};
+      done;
+  done;
+
+
+#ssh-keygen -t rsa -f /root/.ssh/bstaub_id_rsa
+echo bstaub > password-bstaub.txt
+for user in bstaub;
+  do
+    for os in debian-test1 debian-test2 debian-test3;
+      do
+        #sshpass -f password-bstaub.txt ssh-copy-id -i ~/.ssh/bstaub_id_rsa.pub -o StrictHostKeyChecking=no ${user}@${os};
+        sshpass -f password-bstaub.txt ssh-copy-id -o StrictHostKeyChecking=no ${user}@${os};
+      done;
+  done;
+
+
+#ssh-keygen -t rsa -f /root/.ssh/ansible_id_rsa
+echo password > password.txt
+for user in ansible;
+  do
+    for os in debian-test1 debian-test2 debian-test3;
+      do
+        #sshpass -f password.txt ssh-copy-id -i ~/.ssh/ansible_id_rsa.pub -o StrictHostKeyChecking=no ${user}@${os};
+        sshpass -f password.txt ssh-copy-id -o StrictHostKeyChecking=no ${user}@${os};
+      done;
+  done;
+
+
+Testing lab
+-----------
+ansible --version
+ansible -i,debian-test1,debian-test2,debian-test3 all -m ping
+ansible all -m command -a 'id' -o   #-o gibt single line aus und id ist ein Befehl der die ID des Systeusers anzeigt!
+ssh debian-test1
+ssh bstaub@debian-test1
+ssh ansible@debian-test1
+#ssh -i ~/.ssh/bstaub_id_rsa bstaub@debian-test1
+#ssh -i ~/.ssh/ansible_id_rsa ansible@debian-test1

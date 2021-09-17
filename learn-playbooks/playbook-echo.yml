@@ -1,0 +1,5 @@
+- name: Write the current date in a file
+  hosts: debian-buster
+  tasks:
+    - name: "Execute a date command"
+      shell: echo "test" > /tmp/test.txt

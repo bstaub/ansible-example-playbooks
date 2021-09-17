@@ -1,0 +1,14 @@
+---
+- name: play_1
+  hosts: testserverdocker
+  remote_user: root
+
+  tasks:
+  - name: ensure apache is at the latest version
+    apt:
+      name: apache2
+      state: latest
+  - name: write the apache config file
+    template:
+      src: /home/bstaub/template/apache2-config-test.j2
+      dest: /etc/apache2/apache2-config-test.conf

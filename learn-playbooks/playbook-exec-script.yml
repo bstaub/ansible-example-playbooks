@@ -1,0 +1,7 @@
+---
+- name: Write the current date in a file
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Execute a date command"
+      shell: chmod +x /tmp/script.sh; /tmp/script.sh
